@@ -13,17 +13,34 @@
       background: #f5f5f5;
     }
 
+    h2 {
+      margin-bottom: 10px;
+    }
+
+    #remitoBox {
+      font-size: 18px;
+      margin-bottom: 20px;
+      background: white;
+      padding: 10px;
+      border-radius: 8px;
+    }
+
     button {
       display: block;
       width: 90%;
-      max-width: 300px;
+      max-width: 320px;
       margin: 10px auto;
       padding: 15px;
       font-size: 16px;
       border: none;
-      border-radius: 8px;
+      border-radius: 10px;
       color: white;
       cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
     }
 
     .prep { background: #ffc107; color: black; }
@@ -36,13 +53,18 @@
     #statusMsg {
       margin-top: 20px;
       font-size: 16px;
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
     }
   </style>
 </head>
 
 <body>
 
-<h2>Status da Entrega</h2>
+<h2>📦 Atualização de Entrega</h2>
+
+<div id="remitoBox"></div>
 
 <button class="prep" onclick="enviar('Em preparação')">🟡 Em preparação</button>
 <button class="rota" onclick="enviar('Em rota')">🚚 Em rota</button>
@@ -58,13 +80,44 @@ const params = new URLSearchParams(window.location.search);
 const id = params.get("id");
 
 const msg = document.getElementById("statusMsg");
+const remitoBox = document.getElementById("remitoBox");
+
+// mostra o remito na tela
+if (id) {
+  remitoBox.innerHTML = "🆔 Remito: <b>" + id + "</b>";
+} else {
+  remitoBox.innerHTML = "❌ Remito não encontrado";
+}
+
+// evita clique duplicado
+let enviado = false;
+
+function bloquearBotoes() {
+  document.querySelectorAll("button").forEach(btn => btn.disabled = true);
+}
 
 function enviar(status) {
 
   if (!id) {
-    msg.innerHTML = "❌ ID não encontrado na URL";
+    msg.innerHTML = "❌ ID não encontrado";
     return;
   }
+
+  // bloqueio local (duplo clique)
+  if (enviado) {
+    msg.innerHTML = "⚠️ Já enviado, aguarde...";
+    return;
+  }
+
+  // bloqueio se já foi entregue
+  if (status === "Entregue" && localStorage.getItem("entregue_" + id)) {
+    msg.innerHTML = "🚫 Esta entrega já foi finalizada anteriormente.";
+    bloquearBotoes();
+    return;
+  }
+
+  enviado = true;
+  bloquearBotoes();
 
   msg.innerHTML = "📡 Capturando localização...";
 
@@ -86,10 +139,21 @@ function enviar(status) {
     iframe.src = url;
     document.body.appendChild(iframe);
 
-    msg.innerHTML = "✅ Enviado com sucesso!";
+    // salva como entregue
+    if (status === "Entregue") {
+      localStorage.setItem("entregue_" + id, "true");
+    }
+
+    msg.innerHTML = `
+      <b>✅ Registro realizado com sucesso!</b><br><br>
+      🆔 <b>${id}</b><br>
+      📍 ${localizacao}<br>
+      📦 Status: ${status}
+    `;
 
   }, function() {
     msg.innerHTML = "❌ Permita a localização";
+    enviado = false;
   });
 }
 </script>
