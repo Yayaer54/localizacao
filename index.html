@@ -1,0 +1,46 @@
+<script>
+const params = new URLSearchParams(window.location.search);
+const id = params.get("id");
+
+const msg = document.getElementById("statusMsg");
+
+function enviar(status) {
+
+  if (!id) {
+    msg.innerHTML = "❌ ID não encontrado";
+    return;
+  }
+
+  msg.innerHTML = "📡 Capturando localização...";
+
+  navigator.geolocation.getCurrentPosition(pos => {
+
+    const lat = pos.coords.latitude;
+    const lon = pos.coords.longitude;
+    const localizacao = lat + "," + lon;
+
+    msg.innerHTML = "📡 Enviando dados...";
+
+    const url = "https://docs.google.com/forms/d/e/1FAIpQLScArIR3Hk_plgd4KoAh0psrockPJzPkJ1SlPeq4_6lIrRWrGQ/formResponse" +
+      "?entry.746366436=" + encodeURIComponent(id) +
+      "&entry.882904148=" + encodeURIComponent(localizacao) +
+      "&entry.1168111335=" + encodeURIComponent(status);
+
+    // envio invisível
+    const iframe = document.createElement("iframe");
+    iframe.style.display = "none";
+    iframe.src = url;
+    document.body.appendChild(iframe);
+
+    msg.innerHTML = `
+      <b>✅ Registro enviado com sucesso!</b><br><br>
+      🆔 ${id}<br>
+      📍 ${localizacao}<br>
+      📦 Status: ${status}
+    `;
+
+  }, () => {
+    msg.innerHTML = "❌ Ative a localização para continuar";
+  });
+}
+</script>
